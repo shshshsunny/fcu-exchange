@@ -1,6 +1,0 @@
-{
-  "name": "fcu-exchange",
-  "scripts": {
-    "start": "cd server && npm install && node index.js"
-  }
-}
