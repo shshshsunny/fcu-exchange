@@ -1,5 +1,4 @@
 const path = require('path');
-// server/index.js
 const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3').verbose();
@@ -8,6 +7,8 @@ const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// 讓後端負責提供前端打包好的靜態檔案
 app.use(express.static(path.join(__dirname, '../client/dist')));
 
 const db = new sqlite3.Database('./database.sqlite', (err) => {
@@ -19,10 +20,10 @@ const db = new sqlite3.Database('./database.sqlite', (err) => {
 });
 
 db.serialize(() => {
-    // 【這行是關鍵！】強制把舊的、沒有 region 欄位的表格刪除
+    // 強制把舊的表格刪除
     db.run(`DROP TABLE IF EXISTS programs`);
 
-    // 建立全新的表格，確保所有新欄位都有位子
+    // 建立全新的表格
     db.run(`CREATE TABLE programs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         region TEXT,
@@ -99,6 +100,7 @@ db.serialize(() => {
     stmt.finalize();
 });
 
+// API 路由：吐出資料庫的資料
 app.get('/api/programs', (req, res) => {
     db.all("SELECT * FROM programs", [], (err, rows) => {
         if (err) {
@@ -109,6 +111,13 @@ app.get('/api/programs', (req, res) => {
     });
 });
 
+
+// 萬用路由：確保前端 SPA 畫面不會因為找不到網址而出現 Cannot GET
+app.use((req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
+// 啟動伺服器 (整個檔案只需要這一個！)
 app.listen(port, () => {
     console.log(`後端伺服器已升級並啟動：http://localhost:${port}`);
 });
